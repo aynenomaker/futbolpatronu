@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Futbol Patronu — Mini Yönetim Oyunu</title>
+<style>
+:root{--bg:#0b1220;--panel:#121d30;--panel2:#182740;--line:#2b3b55;--text:#edf4ff;--muted:#9fb0c8;--green:#43d17a;--gold:#ffd166;--red:#ff6b6b}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at top,#142744,#080d17 60%);color:var(--text);font:15px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+header{padding:24px 18px 16px;text-align:center;border-bottom:1px solid var(--line);background:#0b1424cc}
+h1{margin:0;font-size:clamp(25px,5vw,38px);letter-spacing:.3px}header p{margin:7px 0 0;color:var(--muted)}
+main{max-width:1120px;margin:auto;padding:16px;display:grid;gap:14px;grid-template-columns:repeat(12,minmax(0,1fr))}
+.panel{background:linear-gradient(145deg,var(--panel),#101a2a);border:1px solid var(--line);border-radius:16px;padding:16px;box-shadow:0 10px 30px #0002;min-width:0}
+.wide{grid-column:span 12}.half{grid-column:span 6}.third{grid-column:span 4}
+@media(max-width:760px){.half,.third{grid-column:span 12}main{padding:10px}.panel{padding:13px}}
+h2{font-size:18px;margin:0 0 12px}h3{font-size:15px;margin:0 0 8px;color:#dbe8fb}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.stat{background:var(--panel2);padding:12px;border-radius:12px;border:1px solid #263953}.stat span{display:block;color:var(--muted);font-size:12px}.stat strong{font-size:23px}
+@media(max-width:500px){.stats{grid-template-columns:repeat(2,1fr)}}
+button,.filebtn{border:0;border-radius:10px;padding:10px 13px;background:var(--green);color:#082013;font-weight:800;cursor:pointer;font-size:14px}
+button:hover,.filebtn:hover{filter:brightness(1.08)}button.secondary{background:#263953;color:var(--text);border:1px solid #405674}button:disabled{opacity:.45;cursor:not-allowed}
+.actions{display:flex;gap:8px;flex-wrap:wrap}.muted{color:var(--muted)}.small{font-size:12px}.tag{display:inline-block;padding:3px 8px;border-radius:999px;background:#203650;color:#bde7ff;font-size:12px}
+table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:9px 7px;text-align:left;border-bottom:1px solid #27374f}th{color:var(--muted);font-weight:700}tr:last-child td{border-bottom:0}.num{text-align:right;font-variant-numeric:tabular-nums}
+.scroll{overflow-x:auto}.player{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 0;border-bottom:1px solid #27374f}.player:last-child{border:0}.rating{font-weight:900;color:var(--gold);min-width:28px;text-align:right}
+select,input[type=file]{max-width:100%;background:#0b1424;color:var(--text);border:1px solid #354b68;border-radius:8px;padding:8px}
+select{width:100%;margin:5px 0 10px}.field{display:block;color:var(--muted);font-size:12px;margin-top:8px}
+#log{max-height:210px;overflow:auto}.logline{padding:8px 0;border-bottom:1px solid #27374f}.logline:last-child{border:0}.green{color:var(--green)}.red{color:var(--red)}
+.logo{width:38px;height:38px;object-fit:contain;background:#fff;border-radius:50%;padding:3px}.clubtitle{display:flex;align-items:center;gap:10px}.empty{padding:18px;text-align:center;color:var(--muted);background:#0b1424;border-radius:10px}
+</style>
+</head>
+<body>
+<header><h1>⚽ Futbol Patronu</h1><p>Kulübünü yönet, kadronu kur ve ligde şampiyonluğa oyna.</p></header>
+<main>
+<section class="panel wide">
+ <div class="clubtitle"><img class="logo" id="clubLogo" src="club_logos/1.webp" onerror="this.style.display='none'" alt=""><div><h2 id="clubName">İzmir Yıldızları</h2><span class="tag" id="season">1. Sezon</span></div></div>
+ <div class="stats" style="margin-top:14px">
+  <div class="stat"><span>Bütçe</span><strong id="money">€25M</strong></div>
+  <div class="stat"><span>Lig sırası</span><strong id="rank">1.</strong></div>
+  <div class="stat"><span>Oynanan maç</span><strong id="played">0</strong></div>
+  <div class="stat"><span>İtibar</span><strong id="rep">65</strong></div>
+ </div>
+</section>
+<section class="panel half">
+ <h2>🎮 Kulüp yönetimi</h2>
+ <label class="field" for="clubSelect">Yöneteceğin takım</label><select id="clubSelect"></select>
+ <label class="field" for="tactic">Taktik</label><select id="tactic"><option value="balanced">Dengeli (4-3-3)</option><option value="attack">Hücum (4-2-4)</option><option value="defense">Savunma (5-4-1)</option></select>
+ <div class="actions"><button id="playBtn">Maçı oynat</button><button class="secondary" id="trainBtn">Antrenman yap (-€500K)</button><button class="secondary" id="resetBtn">Oyunu sıfırla</button></div>
+ <p class="muted small">Maç sonucu takım gücü, taktik ve biraz şansa göre hesaplanır.</p>
+</section>
+<section class="panel half">
+ <h2>📋 Son maç</h2><div id="matchResult" class="empty">Henüz maç oynanmadı. İlk maçını başlat!</div>
+ <h3 style="margin-top:14px">Son gelişmeler</h3><div id="log"><div class="logline muted">Kulüp sezonu başladı. Başarılar!</div></div>
+</section>
+<section class="panel half">
+ <h2>👟 Kadro</h2><div id="squad"></div>
+</section>
+<section class="panel half">
+ <h2>🏆 Lig tablosu</h2><div class="scroll"><table><thead><tr><th>#</th><th>Takım</th><th class="num">O</th><th class="num">AV</th><th class="num">P</th></tr></thead><tbody id="league"></tbody></table></div>
+</section>
+<section class="panel wide">
+ <h2>📂 Kendi CSV dosyalarını yükle</h2>
+ <p class="muted">Bu demo örnek verilerle hemen çalışır. Kendi dosyalarını seçerek kulüp ve oyuncu verilerini içeri alabilirsin. CSV başlıkları için aşağıdaki örnekleri kullan.</p>
+ <div class="actions">
+  <label class="filebtn">clubs.csv <input id="clubsFile" type="file" accept=".csv,text/csv" hidden></label>
+  <label class="filebtn">players.csv <input id="playersFile" type="file" accept=".csv,text/csv" hidden></label>
+  <label class="filebtn">competitions.csv <input id="compsFile" type="file" accept=".csv,text/csv" hidden></label>
+  <label class="filebtn">settings.csv <input id="settingsFile" type="file" accept=".csv,text/csv" hidden></label>
+ </div>
+ <p class="small muted">Önerilen başlıklar: <code>clubs.csv: id,name,country,rating,budget</code> · <code>players.csv: id,name,club_id,position,rating</code> · <code>competitions.csv: id,name</code> · <code>settings.csv: key,value</code></p>
+ <p id="importStatus" class="small muted">Dosyalar yüklenmedi; örnek veriler kullanılıyor.</p>
+ <p class="small muted">Logo, reklam panosu ve kupa görselleri için verdiğin klasör yapısını bu HTML dosyasıyla aynı klasöre koy. Şimdilik oyun logosu yoksa otomatik gizlenir.</p>
+</section>
+</main>
+<script>
+const defaults={
+ clubs:[
+ {id:1,name:"İzmir Yıldızları",country:"TUR",rating:78,budget:25},
+ {id:2,name:"İstanbul Kartalları",country:"TUR",rating:80,budget:30},
+ {id:3,name:"Ankara Gücü",country:"TUR",rating:73,budget:18},
+ {id:4,name:"Akdeniz FK",country:"TUR",rating:75,budget:20},
+ {id:5,name:"Bursa Yeşil",country:"TUR",rating:71,budget:15},
+ {id:6,name:"Karadeniz 1907",country:"TUR",rating:76,budget:22}
+ ],
+ players:[
+ {id:1,name:"Mert Kaya",club_id:1,position:"KL",rating:79},{id:2,name:"Emir Demir",club_id:1,position:"STP",rating:76},{id:3,name:"Arda Yılmaz",club_id:1,position:"OS",rating:81},{id:4,name:"Kerem Aydın",club_id:1,position:"SNT",rating:84},
+ {id:5,name:"Can Öz",club_id:2,position:"KL",rating:82},{id:6,name:"Ali Şahin",club_id:2,position:"SNT",rating:85},{id:7,name:"Efe Çelik",club_id:2,position:"OS",rating:80},
+ {id:8,name:"Deniz Arslan",club_id:3,position:"KL",rating:73},{id:9,name:"Bora Koç",club_id:3,position:"SNT",rating:76},
+ {id:10,name:"Umut Ak",club_id:4,position:"OS",rating:77},{id:11,name:"Kaan Polat",club_id:4,position:"SNT",rating:78},
+ {id:12,name:"Ozan Kurt",club_id:5,position:"STP",rating:72},{id:13,name:"Yiğit Aslan",club_id:5,position:"SNT",rating:74},
+ {id:14,name:"Barış Güneş",club_id:6,position:"OS",rating:78},{id:15,name:"Tolga Deniz",club_id:6,position:"SNT",rating:79}
+ ],
+ competitions:[{id:1,name:"Türkiye Süper Ligi"}],settings:[{key:"season",value:"1"}]
+};
+let clubs=structuredClone(defaults.clubs),players=structuredClone(defaults.players),competitions=structuredClone(defaults.competitions);
+let userClub=1, money=25, reputation=65, played=0, season=1, logItems=["Kulüp sezonu başladı. Başarılar!"];
+let table={}; let trainedBonus=0;
+function initTable(){table={};clubs.forEach(c=>table[c.id]={id:c.id,p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0});}
+function fmtMoney(n){return "€"+(Number(n).toFixed(1).replace(".0",""))+"M"}
+function club(id){return clubs.find(c=>String(c.id)===String(id))}
+function clubRating(c){let ps=players.filter(p=>String(p.club_id)===String(c.id));return ps.length?Math.round(ps.reduce((s,p)=>s+Number(p.rating||60),0)/ps.length):Number(c.rating||65)}
+function getTeamName(c){return c?.name||"Bilinmeyen takım"}
+function renderSelect(){let sel=document.getElementById("clubSelect");let old=String(userClub);sel.innerHTML=clubs.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join("");if(club(old))sel.value=old;else userClub=clubs[0]?.id||1;sel.onchange=()=>{userClub=sel.value;money=Number(club(userClub)?.budget||20);render();};}
+function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+function render(){
+ let c=club(userClub);if(!c)return;
+ document.getElementById("clubName").textContent=c.name;
+ document.getElementById("clubLogo").src=`club_logos/${c.id}.webp`;
+ document.getElementById("money").textContent=fmtMoney(money);
+ document.getElementById("played").textContent=played;
+ document.getElementById("rep").textContent=reputation;
+ document.getElementById("season").textContent=season+". Sezon";
+ let sorted=Object.values(table).sort((a,b)=>b.pts-a.pts||(b.gf-b.ga)-(a.gf-a.ga)||b.gf-a.gf);
+ document.getElementById("rank").textContent=(sorted.findIndex(t=>String(t.id)===String(userClub))+1)+".";
+ let squad=players.filter(p=>String(p.club_id)===String(userClub));
+ document.getElementById("squad").innerHTML=squad.length?squad.map(p=>`<div class="player"><div><strong>${esc(p.name)}</strong><div class="muted small">${esc(p.position||"Oyuncu")}</div></div><div class="rating">${Number(p.rating||60)}</div></div>`).join(""):'<div class="empty">Bu takım için oyuncu bulunamadı. players.csv yükleyebilirsin.</div>';
+ document.getElementById("league").innerHTML=sorted.map((t,i)=>{let cc=club(t.id);return `<tr><td>${i+1}</td><td>${esc(cc?.name||"Takım")}${String(t.id)===String(userClub)?" ★":""}</td><td class="num">${t.p}</td><td class="num">${t.gf-t.ga>0?"+":""}${t.gf-t.ga}</td><td class="num"><strong>${t.pts}</strong></td></tr>`}).join("");
+ document.getElementById("log").innerHTML=logItems.map(x=>`<div class="logline">${x}</div>`).join("");
+}
+function addLog(s){logItems.unshift(s);logItems=logItems.slice(0,6)}
+function playMatch(){
+ if(clubs.length<2){alert("Maç için en az iki takım gerekli.");return}
+ let opponents=clubs.filter(c=>String(c.id)!==String(userClub));
+ let opp=opponents[Math.floor(Math.random()*opponents.length)], me=club(userClub);
+ let tactic=document.getElementById("tactic").value;
+ let myStrength=clubRating(me)+trainedBonus+(tactic==="attack"?3:tactic==="defense"?-2:0);
+ let oppStrength=clubRating(opp);
+ let myGoals=goals(myStrength,oppStrength), oppGoals=goals(oppStrength,myStrength);
+ let mt=table[userClub], ot=table[opp.id];
+ mt.p++;ot.p++;mt.gf+=myGoals;mt.ga+=oppGoals;ot.gf+=oppGoals;ot.ga+=myGoals;
+ if(myGoals>oppGoals){mt.w++;mt.pts+=3;ot.l++;money+=1.5;reputation=Math.min(100,reputation+1)}
+ else if(myGoals<oppGoals){ot.w++;ot.pts+=3;mt.l++;money=Math.max(0,money-.3);reputation=Math.max(1,reputation-1)}
+ else{mt.d++;ot.d++;mt.pts++;ot.pts++;money+=.4}
+ played++;trainedBonus=0;
+ document.getElementById("matchResult").innerHTML=`<div class="muted small">${esc(competitions[0]?.name||"Lig maçı")}</div><div style="display:flex;align-items:center;justify-content:space-around;gap:10px;margin:14px 0"><strong>${esc(me.name)}</strong><strong style="font-size:30px">${myGoals} - ${oppGoals}</strong><strong>${esc(opp.name)}</strong></div><div class="${myGoals>oppGoals?'green':myGoals<oppGoals?'red':''}" style="text-align:center;font-weight:800">${myGoals>oppGoals?"Galibiyet!":myGoals<oppGoals?"Mağlubiyet.":"Beraberlik."}</div>`;
+ addLog(`${myGoals>oppGoals?"🟢":myGoals<oppGoals?"🔴":"🟡"} ${esc(me.name)} ${myGoals}-${oppGoals} ${esc(opp.name)}`);
+ if(played>=clubs.length*2){season++;played=0;initTable();addLog("🏆 Yeni sezon başladı! Lig tablosu sıfırlandı.");}
+ render();
+}
+function goals(a,b){let expected=Math.max(.15,Math.min(3.4,1.35+(a-b)*.045));let n=0;for(let i=0;i<5;i++)if(Math.random()<expected/5)n++;return Math.min(n,5)}
+function train(){if(money<.5){addLog('<span class="red">Antrenman için yeterli bütçe yok.</span>');render();return}money-=.5;trainedBonus=3;let ps=players.filter(p=>String(p.club_id)===String(userClub));if(ps.length){let p=ps[Math.floor(Math.random()*ps.length)];p.rating=Math.min(99,Number(p.rating||60)+1);addLog(`💪 ${esc(p.name)} antrenmanda gelişti!`)}else addLog("💪 Takım antrenman yaptı; sonraki maçta +3 güç.");render()}
+function parseCSV(text){let lines=text.replace(/^\uFEFF/,"").split(/\r?\n/).filter(l=>l.trim());if(!lines.length)return[];function row(line){let out=[],cur="",q=false;for(let i=0;i<line.length;i++){let ch=line[i];if(ch==='"'&&line[i+1]==='"'&&q){cur+='"';i++}else if(ch==='"')q=!q;else if(ch===","&&!q){out.push(cur.trim());cur=""}else cur+=ch}out.push(cur.trim());return out}let headers=row(lines.shift()).map(h=>h.toLowerCase().replace(/^\ufeff/,""));return lines.map(l=>{let vals=row(l),o={};headers.forEach((h,i)=>o[h]=vals[i]??"");return o})}
+function loadFile(id,cb){document.getElementById(id).addEventListener("change",async e=>{let f=e.target.files[0];if(!f)return;try{cb(parseCSV(await f.text()));document.getElementById("importStatus").textContent=f.name+" yüklendi.";renderSelect();if(!club(userClub)&&clubs.length)userClub=clubs[0].id;money=Number(club(userClub)?.budget||20);initTable();render();}catch(err){document.getElementById("importStatus").textContent="Dosya okunamadı: "+err.message}})}
+loadFile("clubsFile",rows=>{clubs=rows.map((r,i)=>({id:r.id||i+1,name:r.name||r.club||"Takım "+(i+1),country:r.country||"TUR",rating:Number(r.rating||70),budget:Number(r.budget||20)}));if(!clubs.length)throw Error("CSV boş")});
+loadFile("playersFile",rows=>{players=rows.map((r,i)=>({id:r.id||i+1,name:r.name||"Oyuncu "+(i+1),club_id:r.club_id||clubs[0]?.id,position:r.position||"OS",rating:Number(r.rating||65)}))});
+loadFile("compsFile",rows=>{competitions=rows.map((r,i)=>({id:r.id||i+1,name:r.name||r.competition||"Lig"}))});
+loadFile("settingsFile",rows=>{let s=Object.fromEntries(rows.map(r=>[r.key,r.value]));if(s.season)season=Number(s.season)||1;addLog("⚙️ Ayarlar içe aktarıldı.")});
+document.getElementById("playBtn").onclick=playMatch;
+document.getElementById("trainBtn").onclick=train;
+document.getElementById("resetBtn").onclick=()=>{if(!confirm("Oyunu baştan başlatmak istiyor musun?"))return;clubs=structuredClone(defaults.clubs);players=structuredClone(defaults.players);competitions=structuredClone(defaults.competitions);userClub=1;money=25;reputation=65;played=0;season=1;trainedBonus=0;logItems=["Kulüp sezonu yeniden başladı."];document.getElementById("matchResult").innerHTML="Henüz maç oynanmadı. İlk maçını başlat!";initTable();renderSelect();render()};
+initTable();renderSelect();render();
+</script>
+</body></html>
